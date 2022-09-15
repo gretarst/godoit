@@ -1,39 +1,33 @@
 package todos
 
 import (
-	"database/sql"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 const databaseFile string = "todos.db"
 
-const createDatabase string = `
-	CREATE TABLE IF NOT EXISTS todos (
-		id INTEGER NOT NULL PRIMARY KEY,
-		time DATETIME NOT NULL,
-		title TEXT
-	)
-`
-
 type Todos struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
 type Todo struct {
+	gorm.Model
 	Time  time.Time
 	Title string
-	ID    int
 }
 
 func NewTodos() (*Todos, error) {
-	db, err := sql.Open("sqlite3", databaseFile)
+	db, err := gorm.Open(sqlite.Open(databaseFile), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := db.Exec(createDatabase); err != nil {
+	err = db.AutoMigrate(&Todo{})
+
+	if err != nil {
 		return nil, err
 	}
 
@@ -43,40 +37,28 @@ func NewTodos() (*Todos, error) {
 }
 
 func (t *Todos) Insert(todo Todo) (int, error) {
-	res, err := t.db.Exec("INSERT INTO todos VALUES(NULL,?,?)", todo.Time, todo.Title)
-	if err != nil {
-		return 0, err
+	res := t.db.Create(&todo)
+	if res.Error != nil {
+		return 0, res.Error
 	}
 
-	var id int64
-	if id, err = res.LastInsertId(); err != nil {
-		return 0, err
-	}
-	return int(id), nil
+	return int(todo.ID), nil
 }
 
 func (t *Todos) List() ([]Todo, error) {
-	res, err := t.db.Query("SELECT * from todos")
-	if err != nil {
-		return []Todo{}, err
+	allTodos := []Todo{}
+	res := t.db.Find(&allTodos)
+	if res.Error != nil {
+		return []Todo{}, res.Error
 	}
 
-	todos := []Todo{}
-	for res.Next() {
-		i := Todo{}
-		if err = res.Scan(&i.ID, &i.Time, &i.Title); err != nil {
-			return nil, err
-		}
-		todos = append(todos, i)
-	}
-
-	return todos, nil
+	return allTodos, nil
 }
 
 func (t *Todos) Delete(id int) (int, error) {
-	_, err := t.db.Exec("DELETE FROM todos WHERE id = ?", id)
-	if err != nil {
-		return 0, err
+	res := t.db.Delete(&Todo{}, id)
+	if res.Error != nil {
+		return 0, res.Error
 	}
 
 	return int(id), nil
