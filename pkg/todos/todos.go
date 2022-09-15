@@ -74,14 +74,10 @@ func (t *Todos) List() ([]Todo, error) {
 }
 
 func (t *Todos) Delete(id int) (int, error) {
-	res, err := t.db.Exec("DELETE FROM todos WHERE id = ?", id)
+	_, err := t.db.Exec("DELETE FROM todos WHERE id = ?", id)
 	if err != nil {
 		return 0, err
 	}
 
-	var i int64
-	if i, err = res.LastInsertId(); err != nil {
-		return 0, err
-	}
-	return int(i), nil
+	return int(id), nil
 }
