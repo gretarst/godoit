@@ -1,4 +1,4 @@
-package todos
+package database
 
 import (
 	"time"
@@ -9,7 +9,7 @@ import (
 
 const databaseFile string = "todos.db"
 
-type Todos struct {
+type Database struct {
 	db *gorm.DB
 }
 
@@ -19,7 +19,8 @@ type Todo struct {
 	Title string
 }
 
-func NewTodos() (*Todos, error) {
+// Open a connection to database and returns it in a Database struct.
+func NewConnection() (*Database, error) {
 	db, err := gorm.Open(sqlite.Open(databaseFile), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -31,12 +32,13 @@ func NewTodos() (*Todos, error) {
 		return nil, err
 	}
 
-	return &Todos{
+	return &Database{
 		db: db,
 	}, nil
 }
 
-func (t *Todos) Insert(todo Todo) (int, error) {
+// Insert a new Todo into database.
+func (t *Database) Insert(todo Todo) (int, error) {
 	res := t.db.Create(&todo)
 	if res.Error != nil {
 		return 0, res.Error
@@ -45,7 +47,8 @@ func (t *Todos) Insert(todo Todo) (int, error) {
 	return int(todo.ID), nil
 }
 
-func (t *Todos) List() ([]Todo, error) {
+// List all Todos in database.
+func (t *Database) List() ([]Todo, error) {
 	allTodos := []Todo{}
 	res := t.db.Find(&allTodos)
 	if res.Error != nil {
@@ -55,7 +58,8 @@ func (t *Todos) List() ([]Todo, error) {
 	return allTodos, nil
 }
 
-func (t *Todos) Delete(id int) (int, error) {
+// Delete a Todo from database based on an ID.
+func (t *Database) Delete(id int) (int, error) {
 	res := t.db.Delete(&Todo{}, id)
 	if res.Error != nil {
 		return 0, res.Error

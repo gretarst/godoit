@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/gretarst/godoit/pkg/todos"
+	"github.com/gretarst/godoit/pkg/database"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +15,7 @@ var deleteCmd = &cobra.Command{
 	Short:   "delete a todo",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		tdb, err := todos.NewTodos()
+		db, err := database.NewConnection()
 		if err != nil {
 			fmt.Printf("Failed to connect to database")
 			os.Exit(1)
@@ -28,7 +28,7 @@ var deleteCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		id, err = tdb.Delete(id)
+		id, err = db.Delete(id)
 
 		if err != nil {
 			fmt.Printf("Failed to delete %d from database", id)
